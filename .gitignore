@@ -1,0 +1,39 @@
+# Dependencies and build output
+node_modules/
+.next/
+out/
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
+.vercel/
+.local-data/
+/scaffold/
+tests/.browser-data/
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*service-account*.json
+*serviceAccount*.json
+credentials*.json
+
+# Private source material and health data
+*.pdf
+private/
+data/
+recordings/
+transcripts/
+exports/
+backups/
+.firebase/
+*-debug.log
+*.log
+
+# Local editor and OS files
+.idea/
+.DS_Store
+Thumbs.db
