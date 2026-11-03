@@ -4,7 +4,7 @@ Updated 2026-11-02 after reviewing the supplied 11-page design and approving a s
 
 ## Implementation status
 
-The first local foundation and manual confirmed-record flow are implemented, with automated domain and browser coverage. A no-write voice connection prototype is present and opt-in/local-only. Live Blob/OpenAI verification, physical-iPhone testing, reliable voice logging, clinical guidance and deployment remain incomplete. See README for actual commands and configuration.
+The foundation, manual confirmed-record flow and production login are implemented. Conversation-only deployed voice now has server-owned SDP exchange, private call ownership and provider Stop. The user explicitly chose no app-enforced usage limits or timer in v1; quotas and spending controls are deferred. Real voice, live diary writes, physical-iPhone testing, reliable voice logging and clinical guidance still require verification. See README for actual commands and configuration.
 
 ## 1. Approved decisions
 
@@ -33,7 +33,7 @@ First slice:
 - Home screen with Start/Stop, visible connection state, and optional captions.
 - Manual fallback: capture value, unit, category, measurement time and relevant meal context; review the exact draft; explicitly save or cancel.
 - Confirmed-only history by measurement month, with no synthetic records automatically seeded.
-- Authenticated Realtime credential creation and a no-write voice feasibility conversation.
+- Authenticated server-side Realtime SDP exchange and a conversation-only voice pilot.
 - Manifest/icons, static-only offline shell and install instructions.
 - Focused domain/auth/storage tests, lint, typecheck, production build and browser validation.
 
@@ -53,7 +53,8 @@ iPhone PWA -> Next.js server routes -> private Vercel Blob
      |               |
      |               +-> verify family session, origin, inputs and limits
      |
-     +-- WebRTC audio -> OpenAI Realtime (prototype; no record-write tools)
+     +-- WebRTC audio -> OpenAI Realtime (conversation only; no record-write tools)
+                     +-> authenticated Stop -> provider hangup
 ```
 
 Store a salted scrypt password hash and a separate strong session signing secret in server environment settings, not Git or the browser. A local setup tool creates `.env.local` without printing secrets. Session cookies are HttpOnly, SameSite=Lax, Secure on HTTPS, and expire. Logout removes the cookie. Password/secret rotation invalidates old sessions. Session duration and login limits are documented implementation defaults, not paid services.
@@ -70,6 +71,7 @@ Layout:
 
 - `journals/YYYY-MM.json`: the measurement month's proposals, completed readings with nested meal context, and operation outcomes.
 - `system/login-window.json`: a small global login-attempt window.
+- `voice-calls/UUID.json`: per-call ownership, provider ID and cleanup status; no audio or transcripts.
 - Future profile/settings in separate private files, with no cross-file atomicity assumed.
 
 Monthly journals bound read/list operations and avoid downloading all history on every request. This is a deliberate refinement of separate files per entry: the currently documented Blob SDK supports ETag conditional writes. A successful compare-and-swap updates a complete proposal/reading/receipt envelope atomically in one file. Do not use last-writer-wins read/modify/write.
@@ -96,7 +98,11 @@ Set a bounded journal size and return an explicit limit error rather than discar
 
 Candidate model: `gpt-realtime-2.1-mini`. Verify access and actual Hindi/Gujarati behavior in the configured OpenAI project. Use the Realtime GA credential/call endpoints, not default GPT-Live examples from shared guides.
 
-Voice is explicitly opt-in and disabled until configured. It is a conversation/connectivity prototype: no record-write tools, no claim of saved readings, no treatment instructions or individualized glucose classification. The UI provides a visible Stop and a manual recording fallback.
+Voice is explicitly opt-in and disabled until configured. It is conversation only: no record-write tools, no claim of saved readings, no treatment instructions or individualized glucose classification. The UI provides a visible Stop and a manual recording fallback.
+
+The approved v1 is intentionally simple: no app-enforced duration, daily-use, concurrent-call or spending limits. Create a private call record with a conditional Blob write, then create the provider call through server-side SDP exchange. Keep all API keys on the server. No Workflow/timer dependency or paid background worker is used. Network/connection timeouts remain to stop stalled handshakes, not to limit conversation duration.
+
+Explicit Stop, backgrounding and sign-out stop local media and call the owner-bound server Stop endpoint. Present unconfirmed cleanup as pending and expose retry. Upstream rejection is distinct from an unknown/lost creation response. A lost provider call ID can prevent confirmed cleanup; no automatic cutoff or dollar spending cap is promised. Deferred limits are future work, not a v1 launch blocker.
 
 Test interruption, microphone denial, pending connection cancellation, audio playback rejection, network loss, page suspension, session expiry, and repeated Start/Stop. Stop must close local tracks, playback, data channel, timers and peer connection. Client cleanup alone is not proof of provider billing termination.
 
@@ -104,7 +110,7 @@ Before enabling real voice logging:
 
 1. Prove trusted server event handling, confirmation and complete provider-side shutdown.
 2. Verify a free hosting runtime can sustain required session control. No paid background worker is preapproved.
-3. Enforce concurrent-session, idle, maximum-duration and daily-usage limits on the server; display limits honestly.
+3. Before reliable voice logging, revisit concurrency, duration, idle, daily-usage and spending limits; verify real provider cleanup. V1 conversation-only voice explicitly defers these limits.
 4. Run at least 30 consented spoken trials with synthetic utterances across Hindi, Gujarati and code-switching.
 5. Require exact confirmed numbers, no ambiguous/negative/stale-confirmation writes, and no false saved acknowledgements. Measure latency and clarification rates.
 
@@ -138,7 +144,7 @@ Clinical and deployment claims are never inferred from passing automated tests.
 
 Target $0 for code hosting, Vercel hosting and storage; OpenAI usage is paid. Current Hobby Blob allowance includes 1 GB storage, 10,000 simple operations and 2,000 advanced operations monthly. These are shared limits, not an entitlement independent of other account usage; recheck the selected account's allowances.
 
-Use monthly journal reads instead of polling or listing every reading. Keep diagnostics local/minimal. Use an included `vercel.app` address initially; a purchased domain, paid monitoring, managed backups, SMS/email service, paid authentication or always-on worker is not required.
+Use monthly journal reads instead of polling or listing every reading. Keep diagnostics local/minimal. Voice adds small private per-call ownership records, but no raw audio/transcripts. Use an included `vercel.app` address initially; a purchased domain, paid monitoring, managed backups, SMS/email service, paid authentication, Workflow/timer service or always-on worker is not required.
 
 Hobby storage can become unavailable if quotas are exhausted; do not promise uptime or silently upgrade. A paused/failed storage request must never yield a "saved" message. Manual private exports are the initial backup direction; automatic backup/restore guarantees remain unimplemented.
 

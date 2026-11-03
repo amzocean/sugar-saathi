@@ -19,7 +19,7 @@ export function sameOrigin(request: Request) {
   }
 }
 
-export async function body(request: Request) {
+export async function body(request: Request, maxBytes = 8192) {
   if (!request.headers.get("content-type")?.startsWith("application/json")) throw new AppError(415, "Expected JSON");
   const reader = request.body?.getReader();
   if (!reader) throw new AppError(400, "A request body is required");
@@ -29,7 +29,7 @@ export async function body(request: Request) {
     const { done, value } = await reader.read();
     if (done) break;
     length += value.length;
-    if (length > 8192) {
+    if (length > maxBytes) {
       await reader.cancel();
       throw new AppError(413, "Request is too large");
     }

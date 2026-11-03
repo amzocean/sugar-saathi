@@ -73,7 +73,7 @@ test("voice stays disabled without configuration; Stop releases a delayed microp
   await login(page);
   await page.getByRole("button", { name: "Start conversation", exact: true }).click();
   await expect(page.locator("main [role=alert]")).toContainText("Voice is not enabled");
-  await page.route("**/api/voice/session", route => route.fulfill({ json: { clientSecret: "synthetic-test-secret" } }));
+  await page.route("**/api/voice/session", route => route.fulfill({ json: { conversationOnly: true } }));
   await page.evaluate(() => {
     const state = window as unknown as { requested: boolean; released: number };
     state.requested = false; state.released = 0;
@@ -117,4 +117,62 @@ test("offline shell caches no diary or API data", async ({ page, context }) => {
   await expect(page.getByRole("heading", { name: "A little pause." })).toBeVisible();
   await expect(page.getByText("Your private history is not cached", { exact: false })).toBeVisible();
   await context.setOffline(false);
+});
+
+test("voice exchanges SDP through the server and exposes retry when provider Stop fails", async ({ page }) => {
+  await login(page);
+  let starts = 0;
+  let stops = 0;
+  let directProviderCalls = 0;
+  await page.route("https://api.openai.com/**", route => { directProviderCalls++; return route.abort(); });
+  await page.route("**/api/voice/session", route => {
+    if (route.request().method() === "GET") return route.fulfill({ json: { conversationOnly: true } });
+    const input = route.request().postDataJSON();
+    expect(Object.keys(input).sort()).toEqual(["id", "sdp"]);
+    starts++;
+    return route.fulfill({ json: { id: input.id, sdp: "v=0\r\n" } });
+  });
+
+  await page.route("**/api/voice/stop", route => {
+    stops++;
+    return route.fulfill(stops === 1
+      ? { status: 503, json: { error: "Provider unavailable" } }
+      : { json: { closed: true } });
+  });
+  await page.evaluate(() => {
+    const state = window as unknown as { stoppedTracks: number };
+    state.stoppedTracks = 0;
+    const stream = { getTracks: () => [{ stop: () => { state.stoppedTracks++; } }] };
+    Object.defineProperty(navigator, "mediaDevices", {
+      configurable: true, value: { getUserMedia: async () => stream },
+    });
+    class Peer extends EventTarget {
+      connectionState = "new";
+      iceGatheringState = "complete";
+      localDescription: { sdp: string } | null = null;
+      onconnectionstatechange?: () => void;
+      channel = { onopen: undefined as (() => void) | undefined, send: () => {}, close: () => {} };
+      addTrack() {}
+      createDataChannel() { return this.channel; }
+      async createOffer() { return { type: "offer", sdp: "v=0\r\n" }; }
+      async setLocalDescription(offer: { sdp: string }) { this.localDescription = offer; }
+      async setRemoteDescription() {
+        this.connectionState = "connected";
+        this.onconnectionstatechange?.(); this.channel.onopen?.();
+      }
+      close() { this.connectionState = "closed"; this.onconnectionstatechange?.(); }
+    }
+    Object.defineProperty(window, "RTCPeerConnection", { configurable: true, value: Peer });
+  });
+  await page.getByRole("button", { name: "Start conversation", exact: true }).click();
+  await expect(page.locator(".voice-card .status")).toContainText("Listening");
+  await page.getByRole("button", { name: "Stop conversation", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Retry server Stop" })).toBeVisible();
+  await expect(page.locator("main [role=alert]")).toContainText("cleanup is not confirmed");
+  expect(await page.evaluate(() => (window as unknown as { stoppedTracks: number }).stoppedTracks)).toBeGreaterThan(0);
+  await page.getByRole("button", { name: "Retry server Stop" }).click();
+  await expect(page.getByRole("button", { name: "Start conversation", exact: true })).toBeVisible();
+  expect(starts).toBe(1);
+  expect(stops).toBe(2);
+  expect(directProviderCalls).toBe(0);
 });

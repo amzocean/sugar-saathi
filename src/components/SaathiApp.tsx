@@ -143,9 +143,9 @@ export default function SaathiApp({ initiallyAuthenticated, configurationError, 
           <svg className="microphone" viewBox="0 0 64 64" aria-hidden="true"><rect x="24" y="9" width="16" height="30" rx="8" /><path d="M16 29v4a16 16 0 0 0 32 0v-4M32 49v9M24 58h16" /></svg>
           <h2>{voice.active ? "Take your time. I am here." : "Bolo, aaram se."}</h2>
           <p>Speak naturally in Hindi or Gujarati.</p>
-          <button className={voice.active ? "voice-button stop" : "voice-button"} onClick={() => voice.active ? voice.stop() : void voice.start()}>{voice.active ? "Stop conversation" : "Start conversation"}</button>
+          <button className={voice.active || voice.cleanupPending ? "voice-button stop" : "voice-button"} onClick={() => voice.active || voice.cleanupPending ? voice.stop() : void voice.start()}>{voice.active ? "Stop conversation" : voice.cleanupPending ? "Retry server Stop" : "Start conversation"}</button>
           {voice.caption && <p className="captions" aria-live="polite">{voice.caption}</p>}
-          <p className="prototype">Voice is a no-write prototype. Use the form below to save readings.</p>
+          <p className="prototype">Voice is conversation only. Use the form below to save readings. OpenAI usage is billed; there is no app timer or daily cap. Press Stop when finished.</p>
           {voice.error && <p role="alert" className="voice-error">{voice.error}</p>}
         </section>
         <section className="record-section" aria-labelledby="record-heading">
