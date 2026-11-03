@@ -123,9 +123,9 @@ export default function SaathiApp({ initiallyAuthenticated, configurationError, 
       {local && <p className="dev-note">Local development · records stay in this project&apos;s ignored data folder</p>}
       {configurationError ? <section className="card setup">
         <p className="eyebrow">FIRST THINGS FIRST</p><h1>A private space,<br />ready for you.</h1>
-        <p>Set up the family password before opening your diary.</p>
+        <p>One setup step is still needed before opening your diary.</p>
         <div className="message" role="status">{configurationError}</div>
-        <p>In this project&apos;s terminal, run <code>npm run setup:local</code>, then restart the app. For Vercel, configure login secrets and a <strong>private</strong> Blob store.</p>
+        <p>For Vercel, check the server environment settings and <strong>private</strong> Blob connection, then redeploy. For local development, run <code>npm run setup:local</code> if login is not configured, then restart the app.</p>
         <p className="small">No default password. No public health records.</p>
       </section> : !authenticated ? <section className="card login-card">
         <p className="eyebrow">JUST FOR THE FAMILY</p>

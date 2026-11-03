@@ -86,8 +86,9 @@ export function storage(): Store {
     }
     return new LocalStore(process.env.SAATHI_LOCAL_DIRECTORY || path.join(process.cwd(), ".local-data"));
   }
+  // The SDK also resolves rotating OIDC tokens from Vercel's request context.
   if (process.env.DATA_STORAGE === "blob" &&
-    (process.env.BLOB_READ_WRITE_TOKEN || (process.env.BLOB_STORE_ID && process.env.VERCEL_OIDC_TOKEN))) return new BlobStore();
+    (process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID)) return new BlobStore();
   throw new AppError(503, "Private storage is not configured. Use local mode for development or connect a private Vercel Blob store.");
 }
 

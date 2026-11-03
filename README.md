@@ -26,7 +26,7 @@ npm run setup:local
 npm run dev
 ```
 
-Setup asks for a password without echoing it, creates ignored `.env.local`, and does not print secrets. It refuses to overwrite an existing file. Local records are stored in ignored `.local-data`. No records are seeded.
+Setup asks for a password of 8 to 256 characters without echoing it, creates ignored `.env.local`, and does not print secrets. It refuses to overwrite an existing file. Local records are stored in ignored `.local-data`. No records are seeded.
 
 Open `http://localhost:3000`. If another project uses that port:
 
@@ -52,7 +52,7 @@ Tests cover password/session tampering, expiry/rotation, origin checks, bounded 
 
 The browser suite covers failed/successful login, persistent login and history after reload, logout, private APIs, cancelled drafts, a committed save whose response is lost, safe retry without duplication, responsive layouts, disabled voice, Stop during delayed microphone permission and an offline shell that caches no diary/API data. It does not substitute for actual iPhone or OpenAI testing.
 
-The final checks passed: 14 domain tests, three browser tests, lint, TypeScript and the production build. The production dependency audit reported zero vulnerabilities; the full dependency set still has moderate development-tool advisories.
+The final checks passed: 16 domain tests, three browser tests, lint, TypeScript and the production build. The production dependency audit reported zero vulnerabilities; the full dependency set still has moderate development-tool advisories.
 
 ## Configure private storage for a later Vercel deployment
 
@@ -61,6 +61,8 @@ The final checks passed: 14 domain tests, three browser tests, lint, TypeScript 
 3. Configure `FAMILY_PASSWORD_HASH`, `SESSION_SECRET` and `DATA_STORAGE=blob` privately in the server environment. Use the generated hash, never the plaintext family password.
 4. Let the connected store provide its OIDC/store configuration, or configure a server-only `BLOB_READ_WRITE_TOKEN`.
 5. Leave voice disabled until its production lifecycle and quota gates are implemented.
+
+The Blob SDK resolves rotating OIDC credentials from Vercel's request context as well as environment variables. A connected `BLOB_STORE_ID` is sufficient to select the adapter; the SDK still authenticates every storage request. Do not manually copy or manage `VERCEL_OIDC_TOKEN`.
 
 No hosting/storage resources have been created, and the application has not been deployed.
 

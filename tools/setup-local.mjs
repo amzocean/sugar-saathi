@@ -4,7 +4,7 @@ import { emitKeypressEvents } from "node:readline";
 
 async function password() {
   if (!process.stdin.isTTY) throw new Error("Run setup in an interactive terminal; do not pass passwords as command arguments.");
-  process.stdout.write("Choose a family password (at least 12 characters): ");
+  process.stdout.write("Choose a family password (at least 8 characters): ");
   emitKeypressEvents(process.stdin);
   process.stdin.setRawMode(true);
   process.stdin.resume();
@@ -29,7 +29,7 @@ async function password() {
 
 try {
   const value = await password();
-  if (value.length < 12 || value.length > 256) throw new Error("Use a password of 12 to 256 characters. Nothing was written.");
+  if (value.length < 8 || value.length > 256) throw new Error("Use a password of 8 to 256 characters. Nothing was written.");
   const salt = randomBytes(16).toString("hex");
   const hash = scryptSync(value, salt, 64).toString("hex");
   const secret = randomBytes(32).toString("hex");

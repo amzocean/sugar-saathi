@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { randomBytes, scryptSync } from "node:crypto";
 import { test } from "node:test";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import SaathiApp from "../src/components/SaathiApp";
 import { authConfig, createSession, passwordMatches, SESSION_SECONDS, verifySession } from "../src/lib/auth";
 import { sameOrigin, body } from "../src/lib/http";
 
@@ -49,4 +52,15 @@ test("request bodies are bounded and malformed JSON is not accepted", async () =
   assert.deepEqual(await body(request('{"value":1}')), { value: 1 });
   await assert.rejects(body(request("invalid")), /Invalid JSON/);
   await assert.rejects(body(request(JSON.stringify("a".repeat(9000)))), /too large/);
+});
+
+test("storage setup errors do not instruct the family to reset a configured password", () => {
+  const markup = renderToStaticMarkup(createElement(SaathiApp, {
+    initiallyAuthenticated: false,
+    configurationError: "Private storage is not configured.",
+    local: false,
+  }));
+  assert.match(markup, /Private storage is not configured/);
+  assert.match(markup, /Blob connection, then redeploy/);
+  assert.doesNotMatch(markup, /Set up the family password before opening/);
 });

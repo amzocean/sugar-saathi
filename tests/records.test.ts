@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
 import { draftSchema, finish, history, propose, reserveLoginAttempt } from "../src/lib/records";
-import { Conflict, LocalStore, type Snapshot, type Store, storage, update } from "../src/lib/store";
+import { BlobStore, Conflict, LocalStore, type Snapshot, type Store, storage, update } from "../src/lib/store";
 
 class MemoryStore implements Store {
   items = new Map<string, Snapshot<unknown>>();
@@ -108,5 +108,29 @@ test("local data mode is never accepted on Vercel", () => {
   finally {
     if (original.mode === undefined) delete process.env.DATA_STORAGE; else process.env.DATA_STORAGE = original.mode;
     if (original.vercel === undefined) delete process.env.VERCEL; else process.env.VERCEL = original.vercel;
+  }
+});
+
+test("Blob selection accepts request-context authentication but rejects missing connections", () => {
+  const keys = ["DATA_STORAGE", "BLOB_STORE_ID", "BLOB_READ_WRITE_TOKEN", "VERCEL_OIDC_TOKEN"] as const;
+  const original = Object.fromEntries(keys.map(key => [key, process.env[key]]));
+  try {
+    process.env.DATA_STORAGE = "blob";
+    process.env.BLOB_STORE_ID = "store_synthetic";
+    delete process.env.BLOB_READ_WRITE_TOKEN;
+    delete process.env.VERCEL_OIDC_TOKEN;
+    assert.ok(storage() instanceof BlobStore);
+
+    delete process.env.BLOB_STORE_ID;
+    process.env.VERCEL_OIDC_TOKEN = "synthetic-token-without-store";
+    assert.throws(() => storage(), /Private storage is not configured/);
+
+    delete process.env.VERCEL_OIDC_TOKEN;
+    process.env.BLOB_READ_WRITE_TOKEN = "synthetic-static-credential";
+    assert.ok(storage() instanceof BlobStore);
+  } finally {
+    for (const key of keys) {
+      if (original[key] === undefined) delete process.env[key]; else process.env[key] = original[key];
+    }
   }
 });
