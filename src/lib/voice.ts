@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { Session } from "./auth";
 import { AppError } from "./errors";
 import { Conflict, type Store, update } from "./store";
+import { voiceInstructions } from "./private-context";
 
 export const voiceOffer = z.object({ id: z.uuid(), sdp: z.string().startsWith("v=0").max(60_000) }).strict();
 type Call = { id: string; owner: string; providerId?: string; stopRequested: boolean; closed: boolean };
@@ -57,6 +58,7 @@ export async function startVoice(
   store: Store, session: Session, input: z.infer<typeof voiceOffer>, fetcher: Fetcher = fetch,
 ) {
   voiceConfiguration();
+  const instructions = await voiceInstructions(store);
   const call: Call = { id: input.id, owner: session.id, stopRequested: false, closed: false };
   try {
     await store.write(key(call.id), call, null);
@@ -73,7 +75,7 @@ export async function startVoice(
   form.set("sdp", input.sdp);
   form.set("session", JSON.stringify({
     type: "realtime", model: process.env.OPENAI_REALTIME_MODEL || "gpt-realtime-2.1-mini",
-    instructions: "You are Sugar Saathi, a warm, concise Hindi/Gujarati voice companion. Follow the user's language. Ask one question at a time. You have NO storage tools and cannot save, retrieve, confirm, or change diary records. Clearly direct recording to the app's manual review form. Never claim a reading was saved. Do not diagnose, interpret personal glucose results, recommend treatment or medication changes, or invent clinical targets.",
+    instructions,
     audio: { output: { voice: "marin" } }, tools: [],
   }));
   let response: Response;

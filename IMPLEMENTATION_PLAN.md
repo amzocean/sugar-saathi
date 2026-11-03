@@ -4,14 +4,14 @@ Updated 2026-11-02 after reviewing the supplied 11-page design and approving a s
 
 ## Implementation status
 
-The foundation, manual confirmed-record flow and production login are implemented. Conversation-only deployed voice now has server-owned SDP exchange, private call ownership and provider Stop. The user explicitly chose no app-enforced usage limits or timer in v1; quotas and spending controls are deferred. Real voice, live diary writes, physical-iPhone testing, reliable voice logging and clinical guidance still require verification. See README for actual commands and configuration.
+The foundation, manual confirmed-record flow and production login are implemented. Conversation-only deployed voice has server-owned SDP exchange, private call ownership and provider Stop; basic voice was confirmed by the user. An authenticated family review/import flow now supports private background context on new calls, without importing diary readings or enabling clinical interpretation. The user explicitly chose no app-enforced usage limits or timer in v1; quotas and spending controls are deferred. Personalized spoken behavior, provider-side cleanup, live diary writes, physical-iPhone testing, reliable voice logging and clinical guidance still require verification. See README for actual commands and configuration.
 
 ## 1. Approved decisions
 
 | Area | Decision |
 | --- | --- |
 | Product | iPhone-installable, voice-first Hindi/Gujarati glucose diary and food-question companion |
-| Code/deployment | Public code-only GitHub repository `amzocean/sugar-saathi`; Vercel deployment has not been provisioned yet |
+| Code/deployment | Public code-only GitHub repository `amzocean/sugar-saathi`; deployed at `https://sugar-saathi-rose.vercel.app` |
 | Web | Next.js App Router, TypeScript, mobile-first UI |
 | Hosting/data budget | Vercel Hobby and private Vercel Blob; no paid infrastructure without approval |
 | AI | OpenAI Realtime is the one approved usage-based cost |
@@ -72,7 +72,8 @@ Layout:
 - `journals/YYYY-MM.json`: the measurement month's proposals, completed readings with nested meal context, and operation outcomes.
 - `system/login-window.json`: a small global login-attempt window.
 - `voice-calls/UUID.json`: per-call ownership, provider ID and cleanup status; no audio or transcripts.
-- Future profile/settings in separate private files, with no cross-file atomicity assumed.
+- `system/voice-context.json`: approved family-reported profile and food-reference sections, schema version and approval time; conditional replacement, separate from confirmed journal data.
+- Future clinician settings remain separate, with no cross-file atomicity assumed.
 
 Monthly journals bound read/list operations and avoid downloading all history on every request. This is a deliberate refinement of separate files per entry: the currently documented Blob SDK supports ETag conditional writes. A successful compare-and-swap updates a complete proposal/reading/receipt envelope atomically in one file. Do not use last-writer-wins read/modify/write.
 
@@ -121,6 +122,8 @@ If free infrastructure cannot meet these requirements, report the limitation and
 This is a diary companion, not a medical protocol or diagnostic device. No medication changes, invented targets, inferred health facts, zero-spike guarantees, or causal claims from a few observations.
 
 Store private profile/clinical settings only after verification and consent. Do not seed records or personal details from the PDF. Real clinical interpretations and localized escalation instructions require qualified review. Unknown targets remain unknown.
+
+The background-context import is distinct from clinician-verified settings: family review and explicit storage/OpenAI consent are required. Import only the supplied document's profile and food-reference sections, never sample dialogue, developer commands or clinical protocols. Treat these notes as unverified, possibly undated background rather than confirmed measurements. Load the latest approved version server-side before creating a paid call; no client-supplied instructions or patient data in the SDP response. This supports ordinary nutrition education and communication preferences, not diagnosis, doses, live diary retrieval or clinical targets. The review UI previews the locally chosen file; status responses contain metadata only. Real patient content must never enter source code, fixtures, logs or public assets.
 
 No raw audio/full-transcript retention by default. Keep necessary voice context in memory and minimal structured records. Exclude health payloads, cookies, credentials and transcripts from logs/analytics. Review actual provider retention before real data is transmitted.
 

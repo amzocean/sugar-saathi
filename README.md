@@ -10,8 +10,9 @@ A private, iPhone-oriented family glucose diary and voice companion prototype. T
 - Private Vercel Blob adapter; single-server local file adapter for development only.
 - Responsive home/history UI, manifest, icon, noindex directives and an offline page that caches no health data.
 - Opt-in Realtime conversation-only voice: server-owned API key and SDP exchange, private call ownership, provider Stop and retryable cleanup. No app-enforced call-duration, daily-use or concurrent-call limits in v1.
+- Authenticated review/import of private family context, stored in private Blob and loaded server-side into each new voice session. Family-reported background is not a verified clinical profile or confirmed diary history.
 
-**Not implemented yet:** reliable voice logging, trusted voice confirmation, usage/spending limits, clinical profile/rules, personalized food advice, historical editing/deletion and export/restore. Real-provider voice, physical-iPhone audio and live diary writes still need verification.
+**Not implemented yet:** reliable voice logging, trusted voice confirmation, usage/spending limits, clinician-verified profile/rules or individualized clinical advice, live diary lookup during voice, historical editing/deletion and export/restore. Basic deployed voice was confirmed by the user; personalized spoken behavior, provider-side Stop, physical-iPhone audio and live diary writes still need independent verification.
 
 The shared login intentionally grants the same access to everyone who knows the password. There are no separate caregiver roles or reliable per-person edit attribution.
 
@@ -50,9 +51,9 @@ Browser tests start and stop their own server on port 3127, use synthetic creden
 
 Tests cover password/session tampering, expiry/rotation, origin checks, bounded request bodies, proposal confirmation/cancellation/expiry, wrong-session access, concurrent writes, idempotent retries, timezone boundaries, meal timing, login limits and local persistence.
 
-The browser suite covers failed/successful login, persistent login and history after reload, logout, private APIs, cancelled drafts, a committed save whose response is lost, safe retry without duplication, responsive layouts, disabled voice, Stop during delayed microphone permission, server SDP exchange, failed-Stop retry and an offline shell that caches no diary/API data. It does not substitute for actual iPhone or OpenAI testing.
+The browser suite covers failed/successful login, persistent login and history after reload, logout, private APIs, cancelled drafts, a committed save whose response is lost, safe retry without duplication, responsive layouts, disabled voice, Stop during delayed microphone permission, server SDP exchange, failed-Stop retry, private-context review/approval and an offline shell that caches no diary/API data. Context tests use synthetic notes, check conditional replacement and next-call freshness, and ensure imports never create journal readings or expose context in voice responses/status/public HTML. They do not prove model behavior or substitute for actual iPhone or OpenAI testing.
 
-The final checks passed: 24 domain tests, four browser tests, lint, TypeScript and the production build. The full dependency set retains 16 moderate development-tool advisories. No Workflow/timer SDK is required.
+Validation commands are listed above. The full dependency set retains 16 moderate development-tool advisories from the last dependency check. No Workflow/timer SDK or new context dependency is required.
 
 ## Configure private storage for a later Vercel deployment
 
@@ -64,7 +65,7 @@ The final checks passed: 24 domain tests, four browser tests, lint, TypeScript a
 
 The Blob SDK resolves rotating OIDC credentials from Vercel's request context as well as environment variables. A connected `BLOB_STORE_ID` is sufficient to select the adapter; the SDK still authenticates every storage request. Do not manually copy or manage `VERCEL_OIDC_TOKEN`.
 
-The application has been deployed at https://sugar-saathi-rose.vercel.app with a private Blob connection. Login has been verified; do not infer that real-provider voice or diary writes passed from the deployment alone.
+The application has been deployed at https://sugar-saathi-rose.vercel.app with a private Blob connection. Login and basic voice have been confirmed; do not infer personalized voice, provider-side cleanup or diary-write verification from deployment alone.
 
 Keep the non-OpenAI infrastructure on free tiers. Blob quotas can interrupt access when exceeded; the app must not silently upgrade or claim failed writes succeeded. No paid auth, database, monitoring, SMS or backup product is required.
 
@@ -82,7 +83,20 @@ First use synthetic conversation content. Verify connection, Hindi/Gujarati spee
 
 For local testing, set the same variables privately in ignored `.env.local` and restart `npm run dev`.
 
-Never paste keys into chat or put them in Git. No live OpenAI test was performed during implementation.
+Never paste keys into chat or put them in Git. Automated implementation tests do not make paid OpenAI calls.
+
+## Import private voice context
+
+1. Sign in, open **Family settings: private voice context** below the diary, and choose the private Markdown file from your device. Do not copy it into this public repository.
+2. The browser extracts only `## B.` (family-reported profile) and `## C.` (food reference), including their subsections. Other top-level sections, sample dialogues, developer integration instructions and clinical protocols are excluded. Review the exact preview; malformed or oversized files are rejected.
+3. Check the consent box only after family review and permission to store these notes privately and share them with OpenAI. Choose **Approve and save private context**. This confirmation is not clinical verification.
+4. Stop and start voice again. Each new server-created session reads the latest approved context from `system/voice-context.json` in private Blob. An existing call retains its original context.
+
+Only the selected sections are saved, not the original file. The authenticated status endpoint returns configuration/approval metadata, never the profile. The profile is not included in public HTML, browser bundles, offline cache or the SDP response; its review preview comes from the file chosen locally. Anyone with the shared family password can replace context, with a conditional write preventing stale overwrites. **Reload status** is required before replacing a version changed by another family member.
+
+Without a profile, existing general voice still works. Invalid or unreadable stored context blocks new paid calls rather than silently pretending to personalize them; invalid context can be replaced through the same review flow. The notes support language, texture preferences and general food education only. Supplied nutrition figures are approximate, unverified references, not a medical meal plan. Historical numbers and typical routines in notes are not today's intake or confirmed diary entries, and importing them never writes journal records. Voice still has no live diary/history or record-write tools and cannot prescribe doses, diagnose, invent targets or interpret personal glucose results.
+
+The actual source and health details remain outside Git. Review OpenAI's applicable data-handling/retention settings before approving real health context; no special retention agreement is configured by this feature.
 
 ## Product and safety boundaries
 

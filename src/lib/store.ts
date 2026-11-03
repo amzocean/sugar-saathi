@@ -18,7 +18,7 @@ export class LocalStore implements Store {
   constructor(private directory: string) {}
 
   private filename(key: string) {
-    if (!/^(journals\/\d{4}-\d{2}|system\/login-window|voice-calls\/[a-fA-F0-9-]{36})\.json$/.test(key)) throw new Error("Invalid storage key");
+    if (!/^(journals\/\d{4}-\d{2}|system\/(?:login-window|voice-context)|voice-calls\/[a-fA-F0-9-]{36})\.json$/.test(key)) throw new Error("Invalid storage key");
     return path.join(this.directory, ...key.split("/"));
   }
 

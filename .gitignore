@@ -31,6 +31,8 @@ exports/
 backups/
 .firebase/
 *-debug.log
+*Private_Context*
+*private_context*
 *.log
 
 # Local editor and OS files

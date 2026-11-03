@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { Proposal, Reading } from "@/lib/records";
 import { api } from "@/lib/client-api";
 import { useVoice } from "./useVoice";
+import PrivateVoiceContext from "./PrivateVoiceContext";
 
 function localDateTime() {
   const date = new Date();
@@ -181,6 +182,7 @@ export default function SaathiApp({ initiallyAuthenticated, configurationError, 
             {reading.elapsedMinutes !== null && <p className="small">{reading.elapsedMinutes} minutes after meal start</p>}
           </li>)}</ul> : <div className="empty"><span aria-hidden="true">+</span><h3>A fresh page for your readings.</h3><p>No confirmed readings in this month. Add one whenever you are ready.</p></div>}
         </section>
+        <PrivateVoiceContext />
       </>}
       {error && <div className="message error" role="alert">{error}</div>}
       <footer><span className="footer-flower" aria-hidden="true">✦</span><p>A personal diary, not medical advice.<br />For urgent symptoms, seek local medical help.</p><small>Private by design. One confirmed step at a time.</small></footer>

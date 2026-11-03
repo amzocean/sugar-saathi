@@ -176,3 +176,49 @@ test("voice exchanges SDP through the server and exposes retry when provider Sto
   expect(stops).toBe(2);
   expect(directProviderCalls).toBe(0);
 });
+
+test("private context requires login, same-origin approval and local review, and exposes metadata only", async ({ page, request }) => {
+  expect((await request.get("/api/voice/context")).status()).toBe(401);
+  const draft = { profile: "SYNTHETIC_PRIVATE_PROFILE", nutrition: "SYNTHETIC_FOOD_REFERENCE", approved: true, expectedVersion: null };
+  expect((await request.post("/api/voice/context", { data: draft, headers: { Origin: "http://127.0.0.1:3127" } })).status()).toBe(401);
+  await login(page);
+  expect((await page.request.post("/api/voice/context", { data: draft, headers: { Origin: "https://unrelated.invalid" } })).status()).toBe(403);
+  expect((await page.request.post("/api/voice/context", { data: { ...draft, approved: false }, headers: { Origin: "http://127.0.0.1:3127" } })).status()).toBe(400);
+  const panel = page.locator(".private-context");
+  await panel.locator("summary").click();
+  await expect(panel).toContainText("No private context yet");
+  let saves = 0;
+  page.on("request", event => { if (event.url().endsWith("/api/voice/context") && event.method() === "POST") saves++; });
+  const file = page.getByLabel("Choose private context Markdown");
+  await file.setInputFiles({
+    name: "synthetic-context.md", mimeType: "text/markdown",
+    buffer: Buffer.from("# Test\n## B. Profile\nSYNTHETIC_PRIVATE_PROFILE\n## C. Food reference\nSYNTHETIC_FOOD_REFERENCE\n## D. Examples\nEXCLUDED_SAMPLE_DIALOGUE"),
+  });
+  await expect(panel.locator("pre")).toContainText("SYNTHETIC_PRIVATE_PROFILE");
+  await expect(panel.locator("pre")).not.toContainText("EXCLUDED_SAMPLE_DIALOGUE");
+  const save = page.getByRole("button", { name: "Approve and save private context" });
+  await expect(save).toBeDisabled();
+  expect(saves).toBe(0);
+  await panel.getByRole("checkbox").check();
+  await save.click();
+  await expect(panel).toContainText("Private context saved");
+  expect(saves).toBe(1);
+  const status = await page.request.get("/api/voice/context");
+  expect(status.headers()["cache-control"]).toContain("no-store");
+  expect(await status.json()).toMatchObject({ configured: true, invalid: false });
+  expect(await status.text()).not.toContain("SYNTHETIC_");
+  const month = new Date().toISOString().slice(0, 7);
+  expect((await (await page.request.get(`/api/history?month=${month}`)).json()).readings).toEqual([]);
+  await page.reload();
+  await expect(page.locator(".private-context")).toContainText("Approved family notes are configured");
+  expect(await page.content()).not.toContain("SYNTHETIC_PRIVATE_PROFILE");
+  expect((await (await page.request.get("/")).text())).not.toContain("SYNTHETIC_");
+  await page.locator(".private-context summary").click();
+  for (const width of [320, 768]) {
+    await page.setViewportSize({ width, height: 900 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  }
+  await page.getByRole("button", { name: "Sign out" }).click();
+  await expect(page.getByLabel("Family password")).toBeVisible();
+  expect((await page.request.get("/api/voice/context")).status()).toBe(401);
+});
