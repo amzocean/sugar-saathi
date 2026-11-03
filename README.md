@@ -100,6 +100,8 @@ The actual source and health details remain outside Git. Review OpenAI's applica
 
 Voice defaults to one or two short, answer-first sentences, using only the profile detail relevant to the question. It avoids automatic food comparisons, nutrition-table recitals, repeated disclaimers and unnecessary follow-up questions. More detail is available on request; necessary uncertainty, clarification and safety information take priority over brevity. The opening is a single short greeting, not a language-selection/setup script. These are model instructions, not a guaranteed sentence cap; changes apply to new calls without re-importing the private notes.
 
+This is a dedicated single-patient app: every voice speaker is the approved profile patient, not a caller to identify or screen. Voice should use explicitly supplied background rather than asking whether the profile applies or re-screening for facts already present; "family-reported" is a provenance label, not a reason to pretend those facts are missing. Unknown fields stay unknown, and an explicit correction may require a focused clarification. Mentioning another person does not switch the speaker's identity or transfer the patient's facts to that person.
+
 ## Product and safety boundaries
 
 Read [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for milestones and [AGENTS.md](AGENTS.md) for contributor guardrails.

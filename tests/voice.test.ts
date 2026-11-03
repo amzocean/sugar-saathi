@@ -228,6 +228,28 @@ test("voice loads fresh approved context on the server without browser leakage o
   assert.ok([...store.items.keys()].every(key => key === "system/voice-context.json" || key.startsWith("voice-calls/")));
 });
 
+test("the speaker is always the profile patient, without repeated screening or invented unknown facts", async () => {
+  const store = new MemoryStore();
+  assert.doesNotMatch(await voiceInstructions(store), /speaker is always the patient described/);
+  await saveContext(store, {
+    profile: "Reported condition: SYNTHETIC_KNOWN_CONDITION. Clinician target: Unknown.",
+    nutrition: "Synthetic educational reference.", approved: true, expectedVersion: null,
+  });
+  await startVoice(store, session, offer(), async (_url, options) => {
+    const config = JSON.parse(String((options?.body as FormData).get("session")));
+    assert.match(config.instructions, /dedicated single-patient app/);
+    assert.match(config.instructions, /speaker is always the patient described in the approved profile/);
+    assert.match(config.instructions, /Do not ask who is speaking/);
+    assert.match(config.instructions, /Do not ask the user to repeat facts already supplied/);
+    assert.match(config.instructions, /they do not mean facts are missing/);
+    assert.match(config.instructions, /Unknown or unprovided facts remain unknown/);
+    assert.match(config.instructions, /do not transfer the patient's facts to that other person/);
+    assert.match(config.instructions, /SYNTHETIC_KNOWN_CONDITION/);
+    assert.match(config.instructions, /Do not diagnose/);
+    return answer();
+  });
+});
+
 test("invalid or unreadable context blocks paid creation, and corrupt context can be replaced", async () => {
   const store = new MemoryStore();
   const p = provider();

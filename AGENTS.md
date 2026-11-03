@@ -5,6 +5,7 @@ Read `README.md` and `IMPLEMENTATION_PLAN.md` before implementing. This is a new
 ## Scope and implementation
 
 - Implement the approved first slice; do not describe uncompleted milestones as working.
+- This is a dedicated single-patient app. Every voice speaker is the configured profile patient. Do not add caller-identification, caregiver-mode detection or multi-patient intake; shared family access does not change the voice patient's identity.
 - Use Next.js/TypeScript, Vercel Hobby, private Vercel Blob, a shared-family password/session, and OpenAI Realtime. No Firebase, Supabase, paid authentication, or paid infrastructure without approval.
 - Create synthetic fixtures only. Do not copy the source PDF, personal profile details, medical examples, recordings, or real history into tracked files.
 - Verify current provider documentation, model access, SDK compatibility, and hosting limits before wiring services. Realtime and GPT-Live are different interfaces.
