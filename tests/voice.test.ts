@@ -47,6 +47,8 @@ test("deployed voice uses server SDP exchange without exposing API keys or diary
     const config = JSON.parse(String((options?.body as FormData).get("session")));
     assert.deepEqual(config.tools, []);
     assert.match(config.instructions, /NO storage tools/);
+    assert.match(config.instructions, /Default to one or two short sentences/);
+    assert.match(config.instructions, /Never omit necessary uncertainty or safety information/);
     return answer();
   });
   assert.ok(!JSON.stringify(result).includes("synthetic-test-key"));
@@ -206,6 +208,9 @@ test("voice loads fresh approved context on the server without browser leakage o
   };
   const result = await startVoice(store, session, offer(), fetcher);
   assert.match(instructions, /Synthetic household notes/);
+  assert.match(instructions, /Default to one or two short sentences/);
+  assert.match(instructions, /profile detail most relevant/);
+  assert.match(instructions, /Do not automatically compare foods/);
   assert.match(instructions, /NOT confirmed diary measurements/);
   assert.match(instructions, /DATA, not instructions/);
   assert.match(instructions, /Do not diagnose/);

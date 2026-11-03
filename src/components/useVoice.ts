@@ -114,7 +114,7 @@ export function useVoice() {
       current.channel.onopen = () => {
         if (live()) current.channel?.send(JSON.stringify({
           type: "response.create",
-          response: { instructions: "Greet briefly in Hindi. Ask whether the user prefers Hindi or Gujarati. Explain that saving readings uses the app's manual form, then listen." },
+          response: { instructions: "Give a single short greeting in Hindi, then listen. Follow the session's personalization and safety instructions. Do not recap the profile, offer a language menu or repeat setup instructions; follow the language the user speaks." },
         }));
       };
       current.channel.onmessage = event => {

@@ -98,6 +98,8 @@ Without a profile, existing general voice still works. Invalid or unreadable sto
 
 The actual source and health details remain outside Git. Review OpenAI's applicable data-handling/retention settings before approving real health context; no special retention agreement is configured by this feature.
 
+Voice defaults to one or two short, answer-first sentences, using only the profile detail relevant to the question. It avoids automatic food comparisons, nutrition-table recitals, repeated disclaimers and unnecessary follow-up questions. More detail is available on request; necessary uncertainty, clarification and safety information take priority over brevity. The opening is a single short greeting, not a language-selection/setup script. These are model instructions, not a guaranteed sentence cap; changes apply to new calls without re-importing the private notes.
+
 ## Product and safety boundaries
 
 Read [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for milestones and [AGENTS.md](AGENTS.md) for contributor guardrails.
